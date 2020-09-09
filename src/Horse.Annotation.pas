@@ -1,4 +1,4 @@
-unit Horse.LAnnotation;
+unit Horse.Annotation;
 
 interface
 
@@ -93,6 +93,8 @@ type
     class function RegisterService<T: constructor, class>: THorseCallback;
   end;
 
+  var
+   SingletonRegisterMethods:TRegisterMethods;
 implementation
 
 uses
@@ -128,7 +130,7 @@ begin
       for LAtr2 in LMethod.GetAttributes do
       begin
         LStrSubRoute := LStrRoute + (LAtr2 as SubRoute).SubRoute;
-        TSingleton<TRegisterMethods>.GetInstance.RegisterMethods.Add
+        SingletonRegisterMethods.RegisterMethods.Add
           (TRegisterMethods.FormatRoute(LStrSubRoute), LMethod.name);
         case (LAtr2 as SubRoute).LStrMethod of
           rGET:
@@ -171,7 +173,7 @@ begin
       LTypeCtx := LCtx.GetType(LObj.ClassInfo);
       try
         try
-          LStrMethod := TSingleton<TRegisterMethods>.GetInstance.RegisterMethods.
+          LStrMethod := SingletonRegisterMethods.RegisterMethods.
             Items[THorseHackRequest(Req).GetWebRequest.PathInfo];
           LTypeCtx.GetMethod(LStrMethod).Invoke(LObj, []);
           Res.Send(IAnnotation(LObj).Execute);
@@ -309,4 +311,8 @@ begin
   FRegisterMethods := Value;
 end;
 
+initialization
+  SingletonRegisterMethods:=TSingleton<TRegisterMethods>.GetInstance;
+Finalization
+  SingletonRegisterMethods.DisposeOf;
 end.
