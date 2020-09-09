@@ -177,7 +177,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="modules\annotation\horse.annotation.pas"/>
-        <DCCReference Include="modules\annotation\testeImplementacao.pas"/>
+        <DCCReference Include="testeImplementacao.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

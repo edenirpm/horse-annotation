@@ -7,7 +7,7 @@ program prjHorse;
 uses
   Horse,
   horse.annotation in 'modules\annotation\horse.annotation.pas',
-  testeImplementacao in 'modules\annotation\testeImplementacao.pas';
+  testeImplementacao in 'testeImplementacao.pas';
 
 begin
   THorse.Get('/ping',
@@ -15,6 +15,8 @@ begin
     begin
       Res.Send('pong');
     end);
+
   Thorse.Use(TAnnotation.use<TTeste>);
+
   THorse.Listen(9000);
 end.
