@@ -1,4 +1,4 @@
-unit Horse.Annotation;
+unit Horse.LAnnotation;
 
 interface
 
@@ -11,9 +11,9 @@ type
 
   TSingleton<T: constructor, class> = class
   strict private
-    class var FInstancia: T;
+    class var FInstance: T;
   public
-    class function getInstance: T;
+    class function GetInstance: T;
   end;
 
   TRegisterMethods = class
@@ -21,61 +21,61 @@ type
     FRegisterMethods: TDictionary<string, string>;
     procedure SetRegisterMethods(const Value: TDictionary<string, string>);
   public
-    constructor create;
-    destructor destroy; override;
+    constructor Create;
+    destructor Destroy; override;
     property RegisterMethods: TDictionary<string, string> read FRegisterMethods
       write SetRegisterMethods;
-    class function formatRoute(aRoute: string): String;
+    class function FormatRoute(aRoute: string): String;
   end;
 
   IAnnotation = interface
     ['{458FBFE8-FDC1-413A-80B1-DE27B5428507}']
     procedure Send(Content: String); overload;
-    procedure Send(aObject: TObject); overload;
-    procedure Send(aInterface: iInterface); overload;
-    function execute: string;
+    procedure Send(AObject: TObject); overload;
+    procedure Send(AInterface: IInterface); overload;
+    function Execute: string;
   end;
 
-  tpRota = (rGET, rPOST, rPUT, rDELETE, rPATCH);
+  tpRoute = (rGET, rPOST, rPUT, rDELETE, rPATCH);
   TParametrosSubRota = array of string;
 
-  SubRota = class(TCustomAttribute)
+  SubRoute = class(TCustomAttribute)
   private
-    Fsubrota: string;
-    FMetodo: tpRota;
-    FParametros: TParametrosSubRota;
-    FDescricao: string;
+    FSubRoute: string;
+    FMethod: tpRoute;
+    FParameters: TParametrosSubRota;
+    FDescription: string;
     FPermissions: string;
     procedure Setsubrota(const Value: string);
-    procedure setMetodo(const Value: tpRota);
+    procedure SetMetodo(const Value: tpRoute);
     procedure SetParametros(const Value: TParametrosSubRota);
     procedure SetDescricao(const Value: string);
 
   public
-    constructor create(Metodo: tpRota; SubRota: string); overload;
-    constructor create(Metodo: tpRota; SubRota, Descricao: string); overload;
-    constructor create(Metodo: tpRota; SubRota, Descricao: string;
+    constructor Create(LStrMethod: tpRoute; SubRoute: string); overload;
+    constructor Create(LStrMethod: tpRoute; SubRoute, Descricao: string); overload;
+    constructor Create(LStrMethod: tpRoute; SubRoute, Descricao: string;
       Permissions: string); overload;
     property Permissions: string read FPermissions write FPermissions;
-    property SubRota: string read Fsubrota write Setsubrota;
-    property Metodo: tpRota read FMetodo write setMetodo;
-    property Parametros: TParametrosSubRota read FParametros
+    property SubRoute: string read FSubRoute write Setsubrota;
+    property LStrMethod: tpRoute read FMethod write SetMetodo;
+    property Parametros: TParametrosSubRota read FParameters
       write SetParametros;
-    property Descricao: string read FDescricao write SetDescricao;
-    destructor destroy; override;
+    property Descricao: string read FDescription write SetDescricao;
+    destructor Destroy; override;
   end;
 
-  Rota = class(TCustomAttribute)
+  Route = class(TCustomAttribute)
   private
     FRota: string;
-    FMetodo: tpRota;
-    FDescricao: string;
+    FMethod: tpRoute;
+    FDescription: string;
     procedure Setrota(const Value: string);
     procedure SetDescricao(const Value: string);
   public
-    constructor create(Rota, Descricao: string);
-    property Rota: string read FRota write Setrota;
-    property Descricao: string read FDescricao write SetDescricao;
+    constructor Create(Route, Descricao: string);
+    property Route: string read FRota write Setrota;
+    property Descricao: string read FDescription write SetDescricao;
   end;
 
   THorseAnnotation = class(TInterfacedObject, IAnnotation)
@@ -83,14 +83,14 @@ type
     FContent: string;
   public
     procedure Send(Content: String); overload;
-    procedure Send(aObject: TObject); overload;
-    procedure Send(aInterface: iInterface); overload;
-    function execute: string;
+    procedure Send(AObject: TObject); overload;
+    procedure Send(AInterface: IInterface); overload;
+    function Execute: string;
   end;
 
   TAnnotation = class
-    class function use<T: constructor, class>: THorseCallback;
-    class function registerService<T: constructor, class>: THorseCallback;
+    class function Use<T: constructor, class>: THorseCallback;
+    class function RegisterService<T: constructor, class>: THorseCallback;
   end;
 
 implementation
@@ -100,161 +100,163 @@ uses
 
 { TAnnotation }
 
-class function TAnnotation.registerService<T>: THorseCallback;
+class function TAnnotation.RegisterService<T>: THorseCallback;
 var
-  TpCtx: TRttiType;
-  CtxTp: TRttiContext;
-  atr, atr2: TCustomAttribute;
-  m: TRttiMethod;
-  tipoRota: tpRota;
-  R, S: string;
-  annotation: IAnnotation;
-  obj: T;
-  Metodo: string;
+  LTypeCtx: TRttiType;
+  LCtx: TRttiContext;
+  LAtr, LAtr2: TCustomAttribute;
+  LMethod: TRttiMethod;
+  LRouteType: tpRoute;
+  LStrRoute, LStrSubRoute: string;
+  LAnnotation: IAnnotation;
+  LObj: T;
+  LStrMethod: string;
 begin
-  result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+  Result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
     begin
 
     end;
-  CtxTp := TRttiContext.create;
-  TpCtx := CtxTp.GetType(T.ClassInfo);
+  LCtx := TRttiContext.Create;
+  LTypeCtx := LCtx.GetType(T.ClassInfo);
   try
-    for atr in TpCtx.GetAttributes do
+    for LAtr in LTypeCtx.GetAttributes do
     begin
-      R := (Rota(atr).Rota);
+      LStrRoute := (Route(LAtr).Route);
     end;
-    for m in TpCtx.GetMethods do
+    for LMethod in LTypeCtx.GetMethods do
     begin
-      for atr2 in m.GetAttributes do
+      for LAtr2 in LMethod.GetAttributes do
       begin
-        S := R + (atr2 as SubRota).SubRota;
-        TSingleton<TRegisterMethods>.getInstance.RegisterMethods.Add
-          (TRegisterMethods.formatRoute(S), m.name);
-        case (atr2 as SubRota).Metodo of
+        LStrSubRoute := LStrRoute + (LAtr2 as SubRoute).SubRoute;
+        TSingleton<TRegisterMethods>.GetInstance.RegisterMethods.Add
+          (TRegisterMethods.FormatRoute(LStrSubRoute), LMethod.name);
+        case (LAtr2 as SubRoute).LStrMethod of
           rGET:
-            THorse.Get(S, result);
+            THorse.Get(LStrSubRoute, Result);
           rPOST:
-            THorse.Get(S, result);
+            THorse.Post(LStrSubRoute, Result);
           rPUT:
-            THorse.Get(S, result);
+            THorse.Put(LStrSubRoute, Result);
           rDELETE:
-            THorse.Get(S, result);
+            THorse.Delete(LStrSubRoute, Result);
+          rPATCH:
+            THorse.Patch(LStrSubRoute, Result);
         end;
       end;
     end;
   finally
-    CtxTp.Free;
-    TpCtx.DisposeOf;
+    LCtx.Free;
+    LTypeCtx.DisposeOf;
   end;
 
 end;
 
-class function TAnnotation.use<T>: THorseCallback;
+class function TAnnotation.Use<T>: THorseCallback;
 var
-  Tp: TRttiType;
-  Ctx: TRttiContext;
-  atr: TCustomAttribute;
-  Metodo: string;
-  obj: T;
-  annotation: IAnnotation;
+  LTypeCtx: TRttiType;
+  LCtx: TRttiContext;
+  LAtr: TCustomAttribute;
+  LStrMethod: string;
+  LObj: T;
+  LAnnotation: IAnnotation;
 begin
-  registerService<T>;
-  result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+  RegisterService<T>;
+  Result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
     begin
     end;
-  result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+  Result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
     begin
-      obj := T.create;
-      Ctx := TRttiContext.create;
-      Tp := Ctx.GetType(obj.ClassInfo);
+      LObj := T.Create;
+      LCtx := TRttiContext.Create;
+      LTypeCtx := LCtx.GetType(LObj.ClassInfo);
       try
         try
-          Metodo := TSingleton<TRegisterMethods>.getInstance.RegisterMethods.
+          LStrMethod := TSingleton<TRegisterMethods>.GetInstance.RegisterMethods.
             Items[THorseHackRequest(Req).GetWebRequest.PathInfo];
-          Tp.GetMethod(Metodo).Invoke(obj, []);
-          Res.Send(IAnnotation(obj).execute);
+          LTypeCtx.GetMethod(LStrMethod).Invoke(LObj, []);
+          Res.Send(IAnnotation(LObj).Execute);
         except
           exit;
         end;
       finally
-        Ctx.Free;
-        obj.DisposeOf;
+        LCtx.Free;
+        LObj.DisposeOf;
       end;
     end;
 end;
 
-{ Rota }
+{ Route }
 
-constructor Rota.create(Rota, Descricao: string);
+constructor Route.Create(Route, Descricao: string);
 begin
-  FDescricao := Descricao;
-  FRota := Rota;
+  FDescription := Descricao;
+  FRota := Route;
 end;
 
-procedure Rota.SetDescricao(const Value: string);
+procedure Route.SetDescricao(const Value: string);
 begin
-  FDescricao := Value;
+  FDescription := Value;
 end;
 
-procedure Rota.Setrota(const Value: string);
+procedure Route.Setrota(const Value: string);
 begin
   FRota := Value;
 end;
 
-{ SubRota }
+{ SubRoute }
 
-constructor SubRota.create(Metodo: tpRota; SubRota: string);
+constructor SubRoute.Create(LStrMethod: tpRoute; SubRoute: string);
 begin
-  FMetodo := Metodo;
-  Fsubrota := SubRota;
+  FMethod := LStrMethod;
+  FSubRoute := SubRoute;
 end;
 
-constructor SubRota.create(Metodo: tpRota; SubRota, Descricao: string);
+constructor SubRoute.Create(LStrMethod: tpRoute; SubRoute, Descricao: string);
 begin
-  FMetodo := Metodo;
-  Fsubrota := SubRota;
-  FDescricao := Descricao;
+  FMethod := LStrMethod;
+  FSubRoute := SubRoute;
+  FDescription := Descricao;
 end;
 
-constructor SubRota.create(Metodo: tpRota;
-  SubRota, Descricao, Permissions: string);
+constructor SubRoute.Create(LStrMethod: tpRoute;
+  SubRoute, Descricao, Permissions: string);
 begin
   FPermissions := Permissions;
-  FMetodo := Metodo;
-  Fsubrota := SubRota;
-  FDescricao := Descricao;
+  FMethod := LStrMethod;
+  FSubRoute := SubRoute;
+  FDescription := Descricao;
 end;
 
-destructor SubRota.destroy;
+destructor SubRoute.Destroy;
 begin
   inherited;
 end;
 
-procedure SubRota.SetDescricao(const Value: string);
+procedure SubRoute.SetDescricao(const Value: string);
 begin
-  FDescricao := Value;
+  FDescription := Value;
 end;
 
-procedure SubRota.setMetodo(const Value: tpRota);
+procedure SubRoute.SetMetodo(const Value: tpRoute);
 begin
-  FMetodo := Value;
+  FMethod := Value;
 end;
 
-procedure SubRota.SetParametros(const Value: TParametrosSubRota);
+procedure SubRoute.SetParametros(const Value: TParametrosSubRota);
 begin
-  FParametros := Value;
+  FParameters := Value;
 end;
 
-procedure SubRota.Setsubrota(const Value: string);
+procedure SubRoute.Setsubrota(const Value: string);
 begin
-  Fsubrota := Value;
+  FSubRoute := Value;
 end;
 
 { THorseAnnotation }
 
-function THorseAnnotation.execute: string;
+function THorseAnnotation.Execute: string;
 begin
-  result := FContent;
+  Result := FContent;
 end;
 
 procedure THorseAnnotation.Send(Content: String);
@@ -262,43 +264,43 @@ begin
   FContent := Content;
 end;
 
-procedure THorseAnnotation.Send(aObject: TObject);
+procedure THorseAnnotation.Send(AObject: TObject);
 begin
-  FContent := Tjson.ObjectToJsonString(aObject);
-  aObject.DisposeOf;
+  FContent := Tjson.ObjectToJsonString(AObject);
+  AObject.DisposeOf;
 end;
 
-procedure THorseAnnotation.Send(aInterface: iInterface);
+procedure THorseAnnotation.Send(AInterface: IInterface);
 begin
-  FContent := Tjson.ObjectToJsonString(aInterface as TObject);
+  FContent := Tjson.ObjectToJsonString(AInterface as TObject);
 end;
 
 { TSingleton<T> }
 
-class function TSingleton<T>.getInstance: T;
+class function TSingleton<T>.GetInstance: T;
 begin
-  if not Assigned(FInstancia) then
-    FInstancia := T.create;
+  if not Assigned(FInstance) then
+    FInstance := T.Create;
 
-  result := FInstancia;
+  Result := FInstance;
 end;
 
 { TRegisterMethods }
 
-constructor TRegisterMethods.create;
+constructor TRegisterMethods.Create;
 begin
-  FRegisterMethods := TDictionary<string, string>.create;
+  FRegisterMethods := TDictionary<string, string>.Create;
 end;
 
-destructor TRegisterMethods.destroy;
+destructor TRegisterMethods.Destroy;
 begin
   FRegisterMethods.DisposeOf;
   inherited;
 end;
 
-class function TRegisterMethods.formatRoute(aRoute: string): String;
+class function TRegisterMethods.FormatRoute(aRoute: string): String;
 begin
-  result := aRoute;
+  Result := aRoute;
 end;
 
 procedure TRegisterMethods.SetRegisterMethods(const Value
