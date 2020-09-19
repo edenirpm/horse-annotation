@@ -3,7 +3,7 @@ unit testeImplementacao;
 interface
 
 uses
-  horse.annotation;
+  horse.annotation,horse;
 Type
   [Route('/app', 'uma descrição qualquer')]
   TTEste = class(THorseAnnotation)
@@ -14,7 +14,7 @@ Type
     [SubRoute(rGET, '/teste2', 'Descrição qualquer da subRota')]
     procedure outroteste;
 
-    [SubRoute(rGET, '/teste3/:id/:cpf', 'Descrição qualquer da subRota')]
+    [SubRoute(rGET, '/teste2/:id/:cpf', 'Descrição qualquer da subRota')]
     procedure getwithid;
   end;
 
@@ -34,8 +34,15 @@ begin
 end;
 
 procedure TTEste.getwithid;
+var
+LPathStr:string;
+  I: Integer;
 begin
-Self.Send('Contain id');
+Params.TryGetValue('id',LPathStr);
+LPathStr:= //Params.Count.ToString;
+//THorseHackRequest(Self.getRequest).Query.Count.ToString;
+
+Self.Send('Contain id: ' + LPathStr);
 end;
 
 procedure TTEste.outroteste;

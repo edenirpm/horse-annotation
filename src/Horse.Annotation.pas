@@ -37,6 +37,8 @@ type
     procedure SetQuery(const Value: TDictionary<String, String>);
     function getParams: TDictionary<String, String>;
     function getQuery: TDictionary<String, String>;
+    function getRequest: THorseRequest;
+    procedure setRequest(aReq: THorseRequest);
     property Query: TDictionary<String, String> read getQuery write SetQuery;
     property Params: TDictionary<String, String> read getParams write SetParams;
     procedure Send(Content: String); overload;
@@ -92,15 +94,20 @@ type
     FContent: string;
     FParams: TDictionary<String, String>;
     FQuery: TDictionary<String, String>;
+    FReq: THorseRequest;
+    FRes: THorseResponse;
     procedure SetParams(const Value: TDictionary<String, String>);
     procedure SetQuery(const Value: TDictionary<String, String>);
     function getParams: TDictionary<String, String>;
     function getQuery: TDictionary<String, String>;
   public
+
     procedure Send(Content: String); overload;
     procedure Send(AObject: TObject); overload;
     procedure Send(AInterface: IInterface); overload;
     function Execute: string;
+    procedure setRequest(aReq: THorseRequest);
+    function getRequest: THorseRequest;
     property Query: TDictionary<String, String> read getQuery write SetQuery;
     property Params: TDictionary<String, String> read getParams write SetParams;
   end;
@@ -155,8 +162,10 @@ begin
             RegisterMethods.Items
             [TRegisterMethods.DecodeKeyRoute(THorseHackRequest(Req)
             .GetWebRequest.PathInfo, MethodRota)];
+          IAnnotation(LObj).setRequest(Req);
           IAnnotation(LObj).Query := Req.Query;
           IAnnotation(LObj).Params := Req.Params;
+
           LTypeCtx.GetMethod(LStrMethod).Invoke(LObj, []);
           Res.Send(IAnnotation(LObj).Execute);
         except
@@ -183,7 +192,7 @@ begin
   LSubRoute := JObj.GetValue<string>('SubRoute');
   LURL := apiManagerUrl + LRoute + '/' + LClass + LSubRoute + '.json';
   LHTTPClient := THTTPClient.Create;
-  LHTTPRequest := LHTTPClient.GetRequest(sHTTPMethodPut, TURI.Create(LURL));
+  LHTTPRequest := LHTTPClient.getRequest(sHTTPMethodPut, TURI.Create(LURL));
   LHTTPRequest.Accept := 'application/json';
   LHTTPRequest.AddHeader('Content-Type', 'application/json');
   LHTTPRequest.SourceStream := TStringStream.Create(JObj.ToJson);
@@ -212,23 +221,7 @@ var
 
 begin
   Result := procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
-    { var
-      LParKey,Lkey,LPathInfo:string;
-      I: Integer;
-    }
     begin
-      { LPathInfo:= THorseHackRequest(Req).GetWebRequest.PathInfo;
-        for i := 0 to THorseHackRequest(Req).Params.Count -1 do
-        begin
-        for LParKey in THorseHackRequest(Req).Params.Keys do
-        begin
-        Lkey:=Lkey+('/:'+THorseHackRequest(Req).Params.ExtractPair(LParKey).Key);
-        end;
-        end;
-        internalUrl:=TRegisterMethods.FormatRoute(LPathInfo) + LKey;
-        writeln(internalUrl);
-        writeln(LpathInfo); }
-
     end;
   LCtx := TRttiContext.Create;
   LTypeCtx := LCtx.GetType(T.ClassInfo);
@@ -243,17 +236,12 @@ begin
       for LAtr2 in LMethod.GetAttributes do
       begin
         LStrSubRoute := LStrRoute + (LAtr2 as SubRoute).SubRoute;
-        // LStrDescription:= (LAtr2 as SubRoute).Descricao;
-        // LSubRouteClean:= (LAtr2 as SubRoute).SubRoute;
+        LStrDescription := (LAtr2 as SubRoute).Descricao;
+        LSubRouteClean := (LAtr2 as SubRoute).SubRoute;
 
         TSingleton<TRegisterMethods>.GetInstance.RegisterMethods.Add
           (TRegisterMethods.EncodeKeyRoute(LStrSubRoute,
           (LAtr2 as SubRoute).LStrMethod), LMethod.name);
-
-        { SingletonRegisterMethods.RegisterMethods
-          .Add(LStrSubRoute,LMethod.name); }
-        // .Add(TRegisterMethods.FormatRoute(LStrSubRoute), LMethod.name);
-        // (TRegisterMethods.FormatRoute(LStrSubRoute), LMethod.name);
         case (LAtr2 as SubRoute).LStrMethod of
           rGET:
             THorse.Get(LStrSubRoute, Result);
@@ -406,6 +394,11 @@ begin
   Result := FQuery;
 end;
 
+function THorseAnnotation.getRequest: THorseRequest;
+begin
+  Result := FReq;
+end;
+
 procedure THorseAnnotation.Send(AInterface: IInterface);
 begin
   FContent := Tjson.ObjectToJsonString(AInterface as TObject);
@@ -419,6 +412,11 @@ end;
 procedure THorseAnnotation.SetQuery(const Value: TDictionary<String, String>);
 begin
   FQuery := Value;
+end;
+
+procedure THorseAnnotation.setRequest(aReq: THorseRequest);
+begin
+  FReq := aReq;
 end;
 
 { TSingleton<T> }
@@ -449,9 +447,7 @@ class function TRegisterMethods.DecodeKeyRoute(RotaExecutada: string;
 var
   Lpos: Integer;
   Parte: TStringList;
- // LStr:String;
 begin
- // Lstr:='encoded';
   Result := '';
 
   if RotaExecutada.Trim = '' then
@@ -483,23 +479,16 @@ class function TRegisterMethods.EncodeKeyRoute(aRoute: string;
 var
   LPosSeparator: Integer;
   LRoute: string;
- // LStr:string;
 begin
-  //LStr:=EmptyStr;
+
   LPosSeparator := Pos(':', aRoute);
-
   if LPosSeparator > 0 then
-    begin
-   //  LStr:='encoded';
-     LRoute := Copy(aRoute, 0, LPosSeparator - 2)
-
-    end
-
+    LRoute := Copy(aRoute, 0, LPosSeparator - 2)
   else
     LRoute := aRoute;
 
   LRoute := LRoute + '[' + GetEnumName(TypeInfo(tpRoute),
-    Integer(metodo)) + ']';//+Lstr;
+    Integer(metodo)) + ']';
 
   Result := LRoute;
 end;
